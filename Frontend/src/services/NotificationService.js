@@ -1,104 +1,135 @@
-import PushNotification from 'react-native-push-notification';
-import { Platform, PermissionsAndroid } from 'react-native';
+import notifee, { TriggerType, AndroidImportance } from '@notifee/react-native';
+import { Platform } from 'react-native';
 
 class NotificationService {
   constructor() {
-    this.configure();
-    this.createDefaultChannel();
+    this.CHANNEL_ID = 'baby-nest-v2';
+    // Async init moved to init() method
   }
 
-  configure() {
-    PushNotification.configure({
-      onRegister: function (token) {
-        console.log('TOKEN:', token);
-      },
-
-      onNotification: function (notification) {
-        console.log('NOTIFICATION:', notification);
-     
-      },
-
-      onAction: function (notification) {
-        console.log('ACTION:', notification.action);
-        console.log('NOTIFICATION:', notification);
-      },
-
-      onRegistrationError: function(err) {
-        console.error(err.message, err);
-      },
-
-     
-      permissions: {
-        alert: true,
-        badge: true,
-        sound: true,
-      },
-
-    
-      popInitialNotification: true,
-
-   
-      requestPermissions: Platform.OS === 'ios',
-    });
+  async init() {
+    await this.createDefaultChannel();
+    await this.configure();
   }
 
-  requestPermissions() {
-    if (Platform.OS === 'ios') {
-      PushNotification.requestPermissions();
-    } else if (Platform.OS === 'android' && Platform.Version >= 33) {
-      PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS)
-        .then(result => console.log('Notification permission status:', result))
-        .catch(err => console.error('Permission request error:', err));
+  async configure() {
+    // Request permissions
+    try {
+      await notifee.requestPermission();
+    } catch (e) {
+      console.warn('[NotificationService] Failed to request permissions:', e);
     }
   }
 
-  createDefaultChannel() {
-    PushNotification.createChannel(
-      {
-        channelId: "local-channel", // (required)
-        channelName: "Local Notifications", 
-        channelDescription: "A channel to categorise your notifications", 
-        playSound: true, 
-        soundName: "default", 
-        importance: 4, 
-        vibrate: true,  
-      },
-      (created) => console.log(`createChannel returned '${created}'`) 
-    );
-  }
-
-  showLocalNotification(title, message) {
-    PushNotification.localNotification({
-      channelId: "local-channel",
-      title: title || "Local Notification",
-      message: message || "My Notification Message",
-      playSound: true,
-      soundName: "default",
+  async createDefaultChannel() {
+    await notifee.createChannel({
+      id: this.CHANNEL_ID,
+      name: 'BabyNest Notifications',
+      description: "Reminders for your baby's journey",
+      sound: 'default',
+      importance: AndroidImportance.HIGH,
+      vibration: true,
     });
   }
 
-  scheduleNotification(title, message, date, id) {
-      PushNotification.localNotificationSchedule({
-        channelId: "local-channel",
-        title: title || "Scheduled Notification",
-        message: message || "My Notification Message",
-        date: date, 
-        allowWhileIdle: true, 
-        id: id ? String(id) : undefined,
-        userInfo: { id: id ? String(id) : undefined }
-      });
+  async showLocalNotification(title, message) {
+    await notifee.displayNotification({
+      title: title || "Local Notification",
+      body: message || "My Notification Message",
+      android: {
+        channelId: this.CHANNEL_ID,
+        importance: AndroidImportance.HIGH,
+        pressAction: {
+          id: 'default',
+        },
+      },
+    });
   }
 
-  getScheduledNotifications(callback) {
-    PushNotification.getScheduledLocalNotifications(callback);
+  async scheduleAppointmentReminder(title, content, dateStr, timeStr, id) {
+       const [year, month, day] = dateStr.split('-').map(Number);
+       // Handle time effectively (e.g. "14:30")
+       const [hours, minutes] = timeStr.split(':').map(Number);
+       const date = new Date(year, month - 1, day, hours, minutes, 0);
+       
+       const REMINDER_OFFSET_MINUTES = 5;
+       const reminderDate = new Date(date.getTime() - REMINDER_OFFSET_MINUTES * 60000); 
+       
+       const now = new Date();
+       let scheduleDate = reminderDate;
+       let message = `in ${REMINDER_OFFSET_MINUTES} minutes`;
+
+       if (reminderDate <= now) {
+           // If we are already within the reminder window (or past it), warn immediately
+           scheduleDate = new Date(Date.now() + 1000); // 1 second delay
+           const diffMins = Math.ceil((date - now) / 60000);
+           if (diffMins > 0) {
+              message = `in ${diffMins} minutes`;
+           } else {
+              message = "now";
+           }
+       }
+
+       await this.scheduleNotification(
+           `Upcoming Appointment: ${title}`,
+           `Your appointment is ${message}! ${content || ""}`,
+           scheduleDate,
+           id
+       );
+  }
+
+  async scheduleNotification(title, message, date, id) {
+    console.log('[NotificationService] Scheduling:', {title, date, dateISO: date.toISOString(), id});
+    
+    // Ensure date is in the future for the trigger
+    const now = Date.now();
+    let triggerTimestamp = date.getTime();
+    
+    if (triggerTimestamp <= now) {
+         console.warn('[NotificationService] Scheduled time is in the past. Adjusting to now + 500ms.');
+         triggerTimestamp = now + 500;
+    }
+
+    const trigger = {
+      type: TriggerType.TIMESTAMP,
+      timestamp: triggerTimestamp, 
+    };
+
+    try {
+      await notifee.createTriggerNotification(
+        {
+          id: id ? String(id) : undefined,
+          title: title || "Scheduled Notification",
+          body: message || "My Notification Message",
+          android: {
+            channelId: this.CHANNEL_ID,
+            pressAction: {
+              id: 'default',
+            },
+          },
+        },
+        trigger,
+      );
+    } catch (e) {
+      console.error('[NotificationService] Error scheduling notification:', e);
+    }
+  }
+
+  async getScheduledNotifications(callback) {
+    const notifications = await notifee.getTriggerNotifications();
+    console.log('[NotificationService] Retrieved scheduled:', notifications);
+    if (callback) {
+      callback(notifications);
+    }
+    return notifications;
   }
   
-  cancelNotification(id) {
-    PushNotification.cancelLocalNotification(String(id));
+  async cancelNotification(id) {
+    await notifee.cancelNotification(String(id));
   }
   
-  cancelAll() {
-      PushNotification.cancelAllLocalNotifications();
+  async cancelAll() {
+      await notifee.cancelAllNotifications();
   }
 }
 

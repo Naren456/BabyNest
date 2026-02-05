@@ -53,13 +53,16 @@ def add_appointment():
         if not all([title, content, appointment_date, appointment_time, appointment_location]):
             return jsonify({"error": "Missing required fields"}), 400
 
-        db.execute(
+        cursor = db.cursor()
+        cursor.execute(
             'INSERT INTO appointments (title, content, appointment_date, appointment_time, appointment_location, appointment_status) VALUES (?, ?, ?, ?, ?, ?)',
             (title, content, appointment_date, appointment_time, appointment_location, 'pending')
         )
         db.commit()
+        
+        new_id = cursor.lastrowid
 
-        return jsonify({"status": "success", "message": "Appointment added successfully"}), 200
+        return jsonify({"status": "success", "message": "Appointment added successfully", "id": new_id}), 200
 
     except sqlite3.OperationalError:
         return jsonify({"error": "Database Error"}), 500
