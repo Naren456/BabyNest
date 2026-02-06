@@ -7,7 +7,9 @@ const colors = ['#FDE68A', '#BFDBFE', '#FECACA', '#D1FAE5'];
 const to_min = str => {
     if (!str) return 0;
     const [hours, minutes] = str.split(':');
-    return parseInt(hours) * 60 + parseInt(minutes ? minutes.split(' ')[0] : 0);
+    const h = parseInt(hours, 10);
+    const m = parseInt(minutes ? minutes.split(' ')[0] : '0', 10);
+    return (Number.isFinite(h) ? h : 0) * 60 + (Number.isFinite(m) ? m : 0);
 };
 
 const ScheduleTimeline = ({ appointments, selectedDate, onAppointmentPress, refreshing, onRefresh }) => {

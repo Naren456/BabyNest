@@ -191,7 +191,7 @@ export const useCalendar = () => {
       const response = await fetch(`${BASE_URL}/delete_appointment/${id}`, { method: 'DELETE' });
       if (response.ok) {
         Toast.show({ type: 'success', text1: 'Appointment deleted successfully!' });
-        fetchAppointments();
+        await fetchAppointments();
         
         NotificationService.showLocalNotification(
           "Appointment Deleted", 
