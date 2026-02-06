@@ -226,8 +226,18 @@ export const useCalendar = () => {
 
   // --- Helper Handlers ---
   const handleDateConfirm = date => {
-    if (date < new Date()) {
-      alert('Please select a future date and time.');
+    let isPast = date < new Date();
+    
+    // If only selecting date, normalize to start of day for comparison
+    if (modals.dateSelector) {
+        const today = new Date();
+        const selectedDateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+        const todayDateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        isPast = selectedDateOnly < todayDateOnly;
+    }
+
+    if (isPast) {
+      Toast.show({ type: 'error', text1: 'Invalid Date', text2: 'Please select a future date and time.' });
       setModals(m => ({ ...m, calendar: false, dateSelector: false }));
       return;
     }
