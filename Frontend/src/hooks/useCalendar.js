@@ -111,33 +111,27 @@ export const useCalendar = () => {
       }
 
       const data = await response.json();
-      
-      
-      if (response.ok) {
-        closeModals();
-        fetchAppointments();
-        Toast.show({ type: 'success', text1: 'Appointment added successfully!' });
-        
-        // Notifications
-        NotificationService.showLocalNotification(
-          "Appointment Created", 
-          `"${newAppointment.title}" scheduled for ${newAppointment.appointment_date} at ${newAppointment.appointment_time}.`
-        );
-        
-        if (data && data.id) {
-             NotificationService.scheduleAppointmentReminder(
-                newAppointment.title,
-                newAppointment.content,
-                newAppointment.appointment_date,
-                newAppointment.appointment_time,
-                data.id
-             );
-        } else {
-             console.warn('[useCalendar] No ID returned from backend, skipping reminder schedule.');
-        }
 
+      closeModals();
+      await fetchAppointments();
+      Toast.show({ type: 'success', text1: 'Appointment added successfully!' });
+
+      // Notifications
+      NotificationService.showLocalNotification(
+        "Appointment Created",
+        `"${newAppointment.title}" scheduled for ${newAppointment.appointment_date} at ${newAppointment.appointment_time}.`
+      );
+
+      if (data && data.id) {
+        NotificationService.scheduleAppointmentReminder(
+          newAppointment.title,
+          newAppointment.content,
+          newAppointment.appointment_date,
+          newAppointment.appointment_time,
+          data.id
+        );
       } else {
-        Toast.show({ type: 'error', text1: data.error || 'Something went wrong!' });
+        console.warn('[useCalendar] No ID returned from backend, skipping reminder schedule.');
       }
     } catch (error) {
       Toast.show({ type: 'error', text1: 'Error adding appointment!' });
