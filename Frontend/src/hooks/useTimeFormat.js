@@ -9,7 +9,6 @@ export const useTimeFormat = () => {
     const checkFormat = () => {
       try {
         const date = new Date();
-        console.log(date)
         const formatted = date.toLocaleTimeString(undefined, { hour: 'numeric' });
         // If it DOES NOT contain AM or PM, it is likely 24-hour.
         const is24 = !formatted.match(/AM|PM|am|pm/);

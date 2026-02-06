@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import { useTheme } from '../../theme/ThemeContext';
 
 
 const days = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];

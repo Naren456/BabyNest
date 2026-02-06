@@ -92,7 +92,7 @@ class NotificationService {
            scheduleDate = new Date(Date.now() + 1000); // 1 second delay
            const diffMins = Math.ceil((date - now) / 60000);
            if (diffMins > 0) {
-              message = `in ${diffMins} minutes`;
+              message = `in ${diffMins} ${diffMins === 1 ? 'minute' : 'minutes'}`;
            } else {
               message = "now";
            }
@@ -107,7 +107,13 @@ class NotificationService {
   }
 
   async scheduleNotification(title, message, date, id) {
-    console.log('[NotificationService] Scheduling:', {title, date, dateISO: date.toISOString(), id});
+    let dateISO = 'invalid date';
+    try {
+        dateISO = date.toISOString();
+    } catch (e) {
+        // ignore invalid date for logging
+    }
+    console.log('[NotificationService] Scheduling:', {title, date, dateISO, id});
     
     // Ensure date is in the future for the trigger
     const now = Date.now();

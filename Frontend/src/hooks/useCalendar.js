@@ -104,7 +104,14 @@ export const useCalendar = () => {
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify(newAppointment),
       });
+
+      if (!response.ok) {
+         const errorText = await response.text();
+         throw new Error(`Error ${response.status}: ${errorText}`);
+      }
+
       const data = await response.json();
+      
       
       if (response.ok) {
         closeModals();
@@ -144,6 +151,12 @@ export const useCalendar = () => {
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify(editAppointment),
       });
+
+      if (!response.ok) {
+         const errorText = await response.text();
+         throw new Error(`Error ${response.status}: ${errorText}`);
+      }
+
       const data = await response.json();
       if (response.ok) {
         Toast.show({ type: 'success', text1: 'Appointment updated successfully!' });
