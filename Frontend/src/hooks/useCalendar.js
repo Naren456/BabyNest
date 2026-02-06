@@ -76,15 +76,24 @@ export const useCalendar = () => {
 
       try {
           const data = await response.json();
-          setAppointments(data);
+          if (Array.isArray(data)) {
+             setAppointments(data);
+             return true;
+          } else {
+             console.error('Fetched data is not an array:', data);
+             setAppointments([]); 
+             return false;
+          }
       } catch (jsonError) {
           console.error('Error parsing appointments JSON:', jsonError);
           // Keep previous state or set to empty array on parse error, don't crash
           setAppointments([]); 
+          return false;
       }
     } catch (error) {
       console.error('Error fetching appointments:', error);
       Toast.show({ type: 'error', text1: 'Failed to fetch appointments' });
+      return false;
     } finally {
       setRefreshing(false);
     }
@@ -152,29 +161,29 @@ export const useCalendar = () => {
       }
 
       const data = await response.json();
-      if (response.ok) {
-        Toast.show({ type: 'success', text1: 'Appointment updated successfully!' });
-        
-        await fetchAppointments();
-        
-        NotificationService.showLocalNotification(
-          "Appointment Updated", 
-          `"${editAppointment.title}" rescheduled to ${editAppointment.appointment_date} at ${editAppointment.appointment_time}.`
-        );
-        NotificationService.cancelNotification(editAppointment.id);
-        NotificationService.scheduleAppointmentReminder(
-            editAppointment.title, 
-            editAppointment.content, 
-            editAppointment.appointment_date, 
-            editAppointment.appointment_time, 
-            editAppointment.id
-        );
-        
-        setModals(m => ({ ...m, edit: false }));
-        setEditAppointment({ title: '', content: '', appointment_date: '', appointment_time: '', appointment_location: '' });
-      } else {
-        Toast.show({ type: 'error', text1: data.error || 'Something went wrong!' });
+
+      Toast.show({ type: 'success', text1: 'Appointment updated successfully!' });
+      
+      const fetchSuccess = await fetchAppointments();
+      
+      if (fetchSuccess) {
+          NotificationService.showLocalNotification(
+            "Appointment Updated", 
+            `"${editAppointment.title}" rescheduled to ${editAppointment.appointment_date} at ${editAppointment.appointment_time}.`
+          );
+          NotificationService.cancelNotification(editAppointment.id);
+          NotificationService.scheduleAppointmentReminder(
+              editAppointment.title, 
+              editAppointment.content, 
+              editAppointment.appointment_date, 
+              editAppointment.appointment_time, 
+              editAppointment.id
+          );
       }
+
+      
+      setModals(m => ({ ...m, edit: false }));
+      setEditAppointment({ title: '', content: '', appointment_date: '', appointment_time: '', appointment_location: '' });
     } catch (error) {
       Toast.show({ type: 'error', text1: 'Error updating appointment!' });
     }
