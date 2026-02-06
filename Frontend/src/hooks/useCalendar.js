@@ -148,6 +148,11 @@ export const useCalendar = () => {
   };
 
   const updateAppointment = async () => {
+    if (!editAppointment.title || !editAppointment.appointment_date || !editAppointment.appointment_time) {
+      Toast.show({ type: 'error', text1: 'Missing Fields', text2: 'Please fill in Title, Date, and Time.' });
+      return;
+    }
+
      try {
       const response = await fetch(`${BASE_URL}/update_appointment/${editAppointment.id}`, {
           method: 'PUT',
@@ -160,7 +165,13 @@ export const useCalendar = () => {
          throw new Error(`Error ${response.status}: ${errorText}`);
       }
 
-      const data = await response.json();
+      // Only parse JSON if content exists and is JSON
+      if (response.status !== 204) {
+          const contentType = response.headers.get("content-type");
+          if (contentType && contentType.includes("application/json")) {
+             await response.json();
+          }
+      }
 
       Toast.show({ type: 'success', text1: 'Appointment updated successfully!' });
       
@@ -180,6 +191,7 @@ export const useCalendar = () => {
               editAppointment.id
           );
       }
+
 
       
       setModals(m => ({ ...m, edit: false }));
@@ -234,9 +246,17 @@ export const useCalendar = () => {
     }
 
     if (activeModal === 'add') {
-      setNewAppointment(prev => ({ ...prev, appointment_date: appointmentDate, appointment_time: appointmentTime }));
+      setNewAppointment(prev => ({ 
+          ...prev, 
+          appointment_date: appointmentDate, 
+          ...(appointmentTime !== '' ? { appointment_time: appointmentTime } : {}) 
+      }));
     } else if (activeModal === 'edit') {
-      setEditAppointment(prev => ({ ...prev, appointment_date: appointmentDate, appointment_time: appointmentTime }));
+      setEditAppointment(prev => ({ 
+          ...prev, 
+          appointment_date: appointmentDate, 
+          ...(appointmentTime !== '' ? { appointment_time: appointmentTime } : {}) 
+      }));
     }
 
     setWeekDates(generateWeekDates(date));
