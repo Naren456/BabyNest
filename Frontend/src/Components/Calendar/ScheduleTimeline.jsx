@@ -20,7 +20,8 @@ const ScheduleTimeline = ({ appointments, selectedDate, onAppointmentPress, refr
 
   const calculateTopOffset = (timeStr) => {
     const minutes = to_min(timeStr);
-    return ((minutes - START_MINUTES) / 60) * timeSlotHeight;
+    const offset = ((minutes - START_MINUTES) / 60) * timeSlotHeight;
+    return Math.max(0, offset);
   };
   
   const calculateHeight = (duration) => {

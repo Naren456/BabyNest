@@ -27,7 +27,7 @@ const AppointmentFormModal = ({
   saveLabel,
 }) => {
   const { theme } = useTheme();
-
+  const safeAppt = appointment || {};
   return (
     <Modal
       visible={visible}
@@ -63,9 +63,9 @@ const AppointmentFormModal = ({
                   placeholder="Appointment title"
                   placeholderTextColor="#999"
                   style={styles.input}
-                  value={appointment.title}
+                  value={safeAppt.title}
                   onChangeText={text =>
-                    setAppointment({ ...appointment, title: text })
+                    setAppointment({ ...safeAppt, title: text })
                   }
                 />
               </View>
@@ -77,9 +77,9 @@ const AppointmentFormModal = ({
                   placeholder="Description"
                   placeholderTextColor="#999"
                   style={[styles.input, styles.descriptionInput]}
-                  value={appointment.content}
+                  value={safeAppt.content}
                   onChangeText={text =>
-                    setAppointment({ ...appointment, content: text })
+                    setAppointment({ ...safeAppt, content: text })
                   }
                   multiline
                   numberOfLines={3}
@@ -97,7 +97,7 @@ const AppointmentFormModal = ({
                     placeholderTextColor="#999"
                     style={styles.input}
                     editable={false}
-                    value={appointment.appointment_date}
+                    value={safeAppt.appointment_date}
                     />
                 </TouchableOpacity>
 
@@ -114,7 +114,7 @@ const AppointmentFormModal = ({
                     placeholderTextColor="#999"
                     style={styles.input}
                     editable={false}
-                    value={formatTime(appointment.appointment_time)}
+                    value={formatTime(safeAppt.appointment_time)}
                     />
                 </TouchableOpacity>
               </View>
@@ -126,10 +126,10 @@ const AppointmentFormModal = ({
                   placeholder="Location"
                   placeholderTextColor="#999"
                   style={styles.input}
-                  value={appointment.appointment_location}
+                  value={safeAppt.appointment_location}
                   onChangeText={text =>
                     setAppointment({
-                      ...appointment,
+                      ...safeAppt,
                       appointment_location: text,
                     })
                   }

@@ -1,6 +1,5 @@
-import notifee, { TriggerType, AndroidImportance } from '@notifee/react-native';
-import { Platform } from 'react-native';
-
+import notifee, { TriggerType, AndroidImportance, AndroidNotificationSetting } from '@notifee/react-native';
+import { Platform, Alert } from 'react-native';
 class NotificationService {
   constructor() {
     this.CHANNEL_ID = 'baby-nest-v2';
@@ -19,6 +18,14 @@ class NotificationService {
     } catch (e) {
       console.warn('[NotificationService] Failed to request permissions:', e);
     }
+  }
+  
+    async hasAndroidExactAlarmPermission() {
+    if (Platform.OS === 'android' && Platform.Version >= 31) {
+      const settings = await notifee.getNotificationSettings();
+      return settings.android.alarm === AndroidNotificationSetting.ENABLED;
+    }
+    return true; 
   }
 
   async createDefaultChannel() {
@@ -47,6 +54,27 @@ class NotificationService {
   }
 
   async scheduleAppointmentReminder(title, content, dateStr, timeStr, id) {
+      const hasPermission = await this.hasAndroidExactAlarmPermission();
+      if (!hasPermission) {
+        Alert.alert(
+          "Permission Required",
+          "This app needs exact alarm permission to send time-critical reminders. Please enable it in the app settings.",
+          [
+            { text: "Cancel", style: "cancel" },
+            { text: "Open Settings", onPress: () => notifee.openAlarmPermissionSettings() }
+          ]
+        );
+        return;
+      }
+
+      // Input Validation
+      const datePattern = /^\d{4}-\d{2}-\d{2}$/;
+      const timePattern = /^\d{1,2}:\d{2}$/;
+
+      if (!dateStr || !timeStr || !datePattern.test(dateStr) || !timePattern.test(timeStr)) {
+          console.error('[NotificationService] Invalid date or time format:', { dateStr, timeStr });
+          return;
+      }
        const [year, month, day] = dateStr.split('-').map(Number);
        // Handle time effectively (e.g. "14:30")
        const [hours, minutes] = timeStr.split(':').map(Number);

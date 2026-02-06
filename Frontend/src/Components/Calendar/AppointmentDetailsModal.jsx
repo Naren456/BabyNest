@@ -20,8 +20,13 @@ const months = [
 
 const changeDateFormat = date => {
   if (!date) return '';
-  const [year, month, day] = date.split('-');
-  return `${day} ${months[month - 1]}, ${year}`;
+  const dateObj = new Date(date);
+  if (!isFinite(dateObj.getTime())) return '';
+  
+  const day = dateObj.getDate();
+  const month = months[dateObj.getMonth()];
+  const year = dateObj.getFullYear();
+  return `${day} ${month}, ${year}`;
 };
 
 const AppointmentDetailsModal = ({ visible, onClose, appointment, onEdit, onDelete }) => {

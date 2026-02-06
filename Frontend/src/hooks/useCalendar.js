@@ -69,10 +69,22 @@ export const useCalendar = () => {
     try {
       setRefreshing(true);
       const response = await fetch(`${BASE_URL}/get_appointments`);
-      const data = await response.json();
-      setAppointments(data);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      try {
+          const data = await response.json();
+          setAppointments(data);
+      } catch (jsonError) {
+          console.error('Error parsing appointments JSON:', jsonError);
+          // Keep previous state or set to empty array on parse error, don't crash
+          setAppointments([]); 
+      }
     } catch (error) {
       console.error('Error fetching appointments:', error);
+      Toast.show({ type: 'error', text1: 'Failed to fetch appointments' });
     } finally {
       setRefreshing(false);
     }
@@ -135,7 +147,8 @@ export const useCalendar = () => {
       const data = await response.json();
       if (response.ok) {
         Toast.show({ type: 'success', text1: 'Appointment updated successfully!' });
-        fetchAppointments();
+        
+        await fetchAppointments();
         
         NotificationService.showLocalNotification(
           "Appointment Updated", 

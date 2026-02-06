@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
-import { useTheme } from '../../theme/ThemeContext';
+
 
 const days = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 
@@ -13,7 +13,7 @@ const WeekDateSelector = ({ weekDates, selectedDate, onDateSelect }) => {
       showsHorizontalScrollIndicator={false}
       style={styles.weekDatesScroll}>
       {weekDates.map((date, index) => {
-        const isSelected = selectedDate.getDate() === date.getDate();
+        const isSelected = selectedDate.toDateString() === date.toDateString();
         return (
           <TouchableOpacity
             key={index}
